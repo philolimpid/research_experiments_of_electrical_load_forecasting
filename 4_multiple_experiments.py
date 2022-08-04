@@ -21,6 +21,8 @@ import matplotlib.dates as mdate
 import general_parameters
 import pipeline_definition
 
+np.random.seed(general_parameters.random_seed)
+
 plt.rcParams['font.sans-serif'] = ['STSONG']
 #plt.rcParams['font.size'] = 16
 plt.rcParams['axes.titlesize'] = 14  # 标题字体大小

@@ -1,4 +1,4 @@
-#research experiments of electrical load forecasting 2022 09
+# research experiments of electrical load forecasting 2022 09
 This is a code repository of the research experiments of load forecasting
 Keywords: short term load forecasting, user clustering; convolutional neural network;
 gated recurrent unit

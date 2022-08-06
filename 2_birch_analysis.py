@@ -211,7 +211,7 @@ def cluster_load_data(load_data_before_cluster, n_clusters, threshold=0.4, branc
     return data
 
 # main program
-def main():
+if __name__ == '__main__':
     #birch analysis of residents
     load_data_after_preprocessing = pd.read_hdf(
         general_parameters.project_dir+r'\data\res_load_data_after_cleaning.h5',

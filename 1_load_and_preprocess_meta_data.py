@@ -170,7 +170,7 @@ def load_meta_weather_data():
 
 
 #main program
-def main():
+if __name__ == '__main__':
     #residential load data preprocessing
     meta_load_data = load_meta_load_data()
     load_data_after_select_residential = select_residential_load_data(meta_load_data)

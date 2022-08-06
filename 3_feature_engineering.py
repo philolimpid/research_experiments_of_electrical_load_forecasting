@@ -249,7 +249,7 @@ def save_data_to_hdf5(wide_window,xixo,res_or_sme):
 
 
 #main program
-def main():
+if __name__ == '__main__':
     #feature_engineering_of_residential_data
     load_data_after_preprocessing = pd.read_hdf(
         general_parameters.project_dir+r'\data\res_load_data_after_cleaning.h5',

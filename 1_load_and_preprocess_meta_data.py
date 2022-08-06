@@ -9,6 +9,8 @@ import importlib
 
 import general_parameters
 
+np.random.seed(general_parameters.random_seed)
+
 fontsize = 10.5
 mpl.rcParams['figure.figsize'] = (8, 6)
 mpl.rcParams['axes.grid'] = False

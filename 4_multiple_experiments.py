@@ -17,11 +17,18 @@ import importlib
 import seaborn as sns
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdate
+import random
 
 import general_parameters
 import pipeline_definition
 
-np.random.seed(general_parameters.random_seed)
+version = '20220804'
+
+def set_random_seed():
+    random.seed(general_parameters.random_seed)
+    np.random.seed(general_parameters.random_seed)
+    tf.random.set_seed(general_parameters.random_seed)
+set_random_seed()
 
 plt.rcParams['font.sans-serif'] = ['STSONG']
 #plt.rcParams['font.size'] = 16
@@ -54,14 +61,13 @@ def load_scaled_feature(res_or_sme):
     scaled_feature_mimo = pd.read_csv(general_parameters.project_dir+r'\data\\'+res_or_sme+r'_scaled_feature.csv')
     return scaled_feature_mimo
 wide_window_mimo = load_wide_window('mimo',res_or_sme)
-wide_window_miso = load_wide_window('miso',res_or_sme)
 wide_window_siso = load_wide_window('siso',res_or_sme)
 scaled_feature_mimo = load_scaled_feature(res_or_sme)
-scaled_feature_miso = load_scaled_feature(res_or_sme)
 scaled_feature_siso = load_scaled_feature(res_or_sme)
 
 def experiment_of_siso_Gaussian_CNN_GRU():
     importlib.reload(pipeline_definition)
+    set_random_seed()
     proba_siso_Gaussian_CNN_GRU_pipeline = \
         pipeline_definition.proba_siso_Gaussian_CNN_GRU_pipeline(model_name='Gaussian-CNN-GRU',
                                                                  window_data=wide_window_siso,
@@ -70,9 +76,9 @@ def experiment_of_siso_Gaussian_CNN_GRU():
                                                                  data_type=res_or_sme
                                                                  )
     proba_siso_Gaussian_CNN_GRU_pipeline.build_and_compile_model()
-    proba_siso_Gaussian_CNN_GRU_pipeline.fit(2)
-    proba_siso_Gaussian_CNN_GRU_pipeline.save_model_and_history(res_or_sme+'-20220802')
-    proba_siso_Gaussian_CNN_GRU_pipeline.load_model_and_history(res_or_sme+'-20220802')
+    proba_siso_Gaussian_CNN_GRU_pipeline.fit(1)
+    proba_siso_Gaussian_CNN_GRU_pipeline.save_model_and_history(version)
+    proba_siso_Gaussian_CNN_GRU_pipeline.load_model_and_history(version)
     proba_siso_Gaussian_CNN_GRU_pipeline.get_and_inverse_standardize_the_actual_value()
     proba_siso_Gaussian_CNN_GRU_pipeline.get_and_inverse_standardize_the_predicted_value()
     proba_siso_Gaussian_CNN_GRU_pipeline.get_the_overall_result()
@@ -157,6 +163,8 @@ def experiment_of_siso_vs_classic_models():
     plt.show()
 def experiment_of_siso_vs_partial_models():
     group_2 = {}
+    set_random_seed()
+    importlib.reload(pipeline_definition)
     group_2['Gaussian-ANN'] = pipeline_definition.proba_siso_Gaussian_ANN_pipeline(
         model_name='Gaussian-ANN',
         window_data=wide_window_siso,
@@ -164,9 +172,9 @@ def experiment_of_siso_vs_partial_models():
         scaled_feature=scaled_feature_siso,
         data_type=res_or_sme)
     group_2['Gaussian-ANN'].build_and_compile_model()
-    group_2['Gaussian-ANN'].fit(50)
-    group_2['Gaussian-ANN'].save_model_and_history(res_or_sme+'-20220524')
-    group_2['Gaussian-ANN'].load_model_and_history(res_or_sme+'-20220523')
+    group_2['Gaussian-ANN'].fit(1)
+    group_2['Gaussian-ANN'].save_model_and_history(version)
+    group_2['Gaussian-ANN'].load_model_and_history(version)
     group_2['Gaussian-ANN'].get_and_inverse_standardize_the_actual_value()
     group_2['Gaussian-ANN'].get_and_inverse_standardize_the_predicted_value()
     group_2['Gaussian-ANN'].get_the_overall_result()
@@ -176,6 +184,8 @@ def experiment_of_siso_vs_partial_models():
     group_2['Gaussian-ANN'].get_quantile_winkler_score()
     group_2['Gaussian-ANN'].get_training_plot()
 
+    set_random_seed()
+    importlib.reload(pipeline_definition)
     group_2['CNN-GRU'] = pipeline_definition.point_siso_CNN_GRU_pipeline(
         model_name='CNN-GRU',
         window_data=wide_window_siso,
@@ -183,9 +193,9 @@ def experiment_of_siso_vs_partial_models():
         scaled_feature=scaled_feature_siso,
         data_type=res_or_sme)
     group_2['CNN-GRU'].build_and_compile_model()
-    group_2['CNN-GRU'].fit(5)
-    group_2['CNN-GRU'].save_model_and_history('res-20220321-for-history')
-    group_2['CNN-GRU'].load_model_and_history('res-20220321')
+    group_2['CNN-GRU'].fit(1)
+    group_2['CNN-GRU'].save_model_and_history(version)
+    group_2['CNN-GRU'].load_model_and_history(version)
     group_2['CNN-GRU'].get_and_inverse_standardize_the_actual_value()
     group_2['CNN-GRU'].get_and_inverse_standardize_the_predicted_value()
     group_2['CNN-GRU'].get_the_overall_result()
@@ -259,81 +269,101 @@ def experiment_of_siso_vs_partial_models():
     group_2_MAPE_RMSE.to_csv(
         project_dir + output_describe + '_' + date + '_' + data_type + '_' + file_type, encoding='utf_8_sig')
 def experiment_of_siso_Gaussian_ANN_overfitting():
-    group_overfitting = {}
+    group = {}
 
-    group_overfitting['Gaussian-ANN'] = pipeline_definition.proba_siso_Gaussian_ANN_pipeline(
+    importlib.reload(pipeline_definition)
+    set_random_seed()
+    group['Gaussian-ANN'] = pipeline_definition.proba_siso_Gaussian_ANN_pipeline(
         model_name='Gaussian-ANN',
         window_data=wide_window_siso,
         output_features=['overall'],
         scaled_feature=scaled_feature_siso,
         data_type=res_or_sme)
-    group_overfitting['Gaussian-ANN'].build_and_compile_model()
-    group_overfitting['Gaussian-ANN'].fit(10)
-    group_overfitting['Gaussian-ANN'].save_model_and_history(res_or_sme+'-20220504-for-overfitting_4')
-    group_overfitting['Gaussian-ANN'].load_model_and_history(res_or_sme+'-20220504-for-overfitting')
-    group_overfitting['Gaussian-ANN'].get_and_inverse_standardize_the_actual_value()
-    group_overfitting['Gaussian-ANN'].get_and_inverse_standardize_the_predicted_value()
-    group_overfitting['Gaussian-ANN'].get_the_overall_result()
-    group_overfitting['Gaussian-ANN'].get_the_MAPE_RMSE_time()
-    group_overfitting['Gaussian-ANN'].get_point_plot_between_actual_and_predicted_value()
-    group_overfitting['Gaussian-ANN'].get_prob_plot_between_actual_and_predicted()
-    group_overfitting['Gaussian-ANN'].get_quantile_winkler_score()
-    group_overfitting['Gaussian-ANN'].get_training_plot()
+    group['Gaussian-ANN'].build_and_compile_model()
+    group['Gaussian-ANN'].fit(15)
+    group['Gaussian-ANN'].save_model_and_history(version)
+    group['Gaussian-ANN'].load_model_and_history(version)
+    group['Gaussian-ANN'].get_and_inverse_standardize_the_actual_value()
+    group['Gaussian-ANN'].get_and_inverse_standardize_the_predicted_value()
+    group['Gaussian-ANN'].get_the_overall_result()
+    group['Gaussian-ANN'].get_the_MAPE_RMSE_time()
+    group['Gaussian-ANN'].get_point_plot_between_actual_and_predicted_value()
+    group['Gaussian-ANN'].get_prob_plot_between_actual_and_predicted()
+    group['Gaussian-ANN'].get_training_plot()
 
-    group_overfitting['ANN'] = pipeline_definition.point_siso_ANN_pipeline(
+    importlib.reload(pipeline_definition)
+    set_random_seed()
+    group['ANN'] = pipeline_definition.point_siso_ANN_pipeline(
         model_name='ANN',
         window_data=wide_window_siso,
         output_features=['overall'],
         scaled_feature=scaled_feature_siso,
         data_type=res_or_sme)
-    group_overfitting['ANN'].build_and_compile_model()
-    group_overfitting['ANN'].fit(200)
-    group_overfitting['ANN'].save_model_and_history(res_or_sme+'-20220504-for-overfitting-5')
-    group_overfitting['ANN'].load_model_and_history(res_or_sme+'-20220504-for-overfitting-4')
-    group_overfitting['ANN'].get_and_inverse_standardize_the_actual_value()
-    group_overfitting['ANN'].get_and_inverse_standardize_the_predicted_value()
-    group_overfitting['ANN'].get_the_overall_result()
-    group_overfitting['ANN'].get_the_MAPE_RMSE_time()
-    group_overfitting['ANN'].get_point_plot_between_actual_and_predicted_value()
-    group_overfitting['ANN'].get_prob_plot_between_actual_and_predicted()
-    group_overfitting['ANN'].get_quantile_winkler_score()
-    group_overfitting['ANN'].get_training_plot()
+    group['ANN'].build_and_compile_model()
+    group['ANN'].fit(15)
+    group['ANN'].save_model_and_history(version)
+    group['ANN'].load_model_and_history(version)
+    group['ANN'].get_and_inverse_standardize_the_actual_value()
+    group['ANN'].get_and_inverse_standardize_the_predicted_value()
+    group['ANN'].get_the_overall_result()
+    group['ANN'].get_the_MAPE_RMSE_time()
+    group['ANN'].get_point_plot_between_actual_and_predicted_value()
+    group['ANN'].get_training_plot()
+
+    importlib.reload(pipeline_definition)
+    set_random_seed()
+    group['Resemble-ANN'] = pipeline_definition.proba_siso_resemble_Gaussian_ANN_pipeline(
+        model_name='Resemble-ANN',
+        window_data=wide_window_siso,
+        output_features=['overall'],
+        scaled_feature=scaled_feature_siso,
+        data_type=res_or_sme)
+    group['Resemble-ANN'].build_and_compile_model()
+    group['Resemble-ANN'].fit(3)
+    group['Resemble-ANN'].save_model_and_history(version)
+    group['Resemble-ANN'].load_model_and_history(version)
+    group['Resemble-ANN'].get_and_inverse_standardize_the_actual_value()
+    group['Resemble-ANN'].get_and_inverse_standardize_the_predicted_value()
+    group['Resemble-ANN'].get_the_overall_result()
+    group['Resemble-ANN'].get_the_MAPE_RMSE_time()
+    group['Resemble-ANN'].get_point_plot_between_actual_and_predicted_value()
+    group['Resemble-ANN'].get_prob_plot_between_actual_and_predicted()
+    group['Resemble-ANN'].get_training_plot()
 
 
 
-    group_2_metrics_list = [proba_siso_Gaussian_CNN_GRU_pipeline.MAPE_RMSE_time_before_reconcile['overall']]
-    column_name_list = [proba_siso_Gaussian_CNN_GRU_pipeline.model_name]
-    for i in group_2:
-        group_2_metrics_list.append(group_2[i].MAPE_RMSE_time_before_reconcile)
-        column_name_list.append(group_2[i].model_name)
-    group_2_MAPE_RMSE = pd.concat(group_2_metrics_list, axis=1)
-    group_2_MAPE_RMSE.columns = column_name_list
-    print(group_2_MAPE_RMSE)
+    group_metrics_list = []
+    column_name_list = []
+    for i in group:
+        group_metrics_list.append(group[i].MAPE_RMSE_time_before_reconcile)
+        column_name_list.append(group[i].model_name)
+    group_MAPE_RMSE = pd.concat(group_metrics_list, axis=1)
+    group_MAPE_RMSE.columns = column_name_list
+    print(group_MAPE_RMSE)
     project_dir, output_describe, date, data_type, file_type = \
-        general_parameters.project_dir, '\experiment_output\group_2_MAPE_RMSE', \
+        general_parameters.project_dir, '\experiment_output\group_MAPE_RMSE', \
         str(datetime.datetime.now().date()), res_or_sme, '.csv'
-    group_2_MAPE_RMSE.to_csv(
+    group_MAPE_RMSE.to_csv(
         project_dir + output_describe + '_' + date + '_' + data_type + '_' + file_type, encoding='utf_8_sig')
 
     date_range = pd.date_range('2010-09-01 00:30', periods=1 * 48, freq='30min')
-    group_2_data_for_plot = [proba_siso_Gaussian_CNN_GRU_pipeline.actual_value.loc[date_range],
-                             proba_siso_Gaussian_CNN_GRU_pipeline.predicted_overall_mean_value.loc[date_range]]
-    column_name_list = ['actual_value', proba_siso_Gaussian_CNN_GRU_pipeline.model_name]
-    for i in group_2:
-        group_2_data_for_plot.append(group_2[i].predicted_mean_value.loc[date_range])
-        column_name_list.append(group_2[i].model_name)
-    group_2_data_for_plot = pd.concat(group_2_data_for_plot, axis=1)
-    group_2_data_for_plot.columns = column_name_list
+    group_data_for_plot = [group['ANN'].actual_value.loc[date_range]]
+    column_name_list = ['actual_value']
+    for i in group:
+        group_data_for_plot.append(group[i].predicted_mean_value.loc[date_range])
+        column_name_list.append(group[i].model_name)
+    group_data_for_plot = pd.concat(group_data_for_plot, axis=1)
+    group_data_for_plot.columns = column_name_list
 
     f, axs = plt.subplots(2, 2, figsize=(8, 6))
-    for i in range(len(group_2_data_for_plot.columns[1:])):
-        sns.lineplot(data=group_2_data_for_plot, x=group_2_data_for_plot.index,
-                     y=group_2_data_for_plot['actual_value'], ax=axs[i // 2, i % 2],
+    for i in range(len(group_data_for_plot.columns[1:])):
+        sns.lineplot(data=group_data_for_plot, x=group_data_for_plot.index,
+                     y=group_data_for_plot['actual_value'], ax=axs[i // 2, i % 2],
                      label='实际值', marker='*', markersize=4, color='r')
-        sns.lineplot(data=group_2_data_for_plot, x=group_2_data_for_plot.index,
-                     y=group_2_data_for_plot[group_2_data_for_plot.columns[i + 1]], ax=axs[i // 2, i % 2],
+        sns.lineplot(data=group_data_for_plot, x=group_data_for_plot.index,
+                     y=group_data_for_plot[group_data_for_plot.columns[i + 1]], ax=axs[i // 2, i % 2],
                      label='预测值', marker='^', markersize=4, color='b')
-        axs[i // 2, i % 2].set_title(str(group_2_data_for_plot.columns[i + 1]))
+        axs[i // 2, i % 2].set_title(str(group_data_for_plot.columns[i + 1]))
         axs[i // 2, i % 2].set_ylabel('负荷/kWh')
         axs[i // 2, i % 2].set_xlabel('时间')
         axs[i // 2, i % 2].xaxis.set_major_formatter(mdate.DateFormatter('%H'))
@@ -343,7 +373,7 @@ def experiment_of_siso_Gaussian_ANN_overfitting():
     plt.rcParams['xtick.direction'] = 'in'
     plt.rcParams['ytick.direction'] = 'in'
 
-    sns.barplot(data=group_2_MAPE_RMSE.loc[[('MAPE(%)','TOTAL')]].melt(ignore_index=False).reset_index().rename({'variable':'模型','value':'MAPE(%)'},axis=1),
+    sns.barplot(data=group_MAPE_RMSE.loc[[('MAPE(%)','TOTAL')]].melt(ignore_index=False).reset_index().rename({'variable':'模型','value':'MAPE(%)'},axis=1),
                 x='模型',y = 'MAPE(%)',palette='crest',ax=axs[1,1])
     axs[1, 1].set_title('MAPE对比')
 
@@ -353,19 +383,44 @@ def experiment_of_siso_Gaussian_ANN_overfitting():
         format='png')
     plt.show()
 
-    group_2_history_list = [proba_siso_Gaussian_CNN_GRU_pipeline.history.history['val_mean_absolute_error']]
-    column_name_list = [proba_siso_Gaussian_CNN_GRU_pipeline.model_name]
-    for i in group_2:
-        group_2_metrics_list.append(group_2[i].MAPE_RMSE_time_before_reconcile)
-        column_name_list.append(group_2[i].model_name)
-    group_2_MAPE_RMSE = pd.concat(group_2_metrics_list, axis=1)
-    group_2_MAPE_RMSE.columns = column_name_list
-    print(group_2_MAPE_RMSE)
-    project_dir, output_describe, date, data_type, file_type = \
-        general_parameters.project_dir, '\experiment_output\group_2_MAPE_RMSE', \
-        str(datetime.datetime.now().date()), res_or_sme, '.csv'
-    group_2_MAPE_RMSE.to_csv(
-        project_dir + output_describe + '_' + date + '_' + data_type + '_' + file_type, encoding='utf_8_sig')
+
+    group_data_for_plot = []
+    column_name_list = []
+    for i in group:
+        group_data_for_plot.append(group[i].history_of_val_metrics)
+        column_name_list.append(group[i].model_name)
+    group_data_for_plot = pd.concat(group_data_for_plot, axis=1)
+    group_data_for_plot.columns = column_name_list
+    color_list = ['blue', 'green']
+    marker_list = ['s', '^']
+    dashes_list = ['solid', 'dotted']
+
+    f, axs = plt.subplots(1, 1, figsize=(8, 6))
+    for i in range(len(group_data_for_plot.columns[:])):
+        sns.lineplot(data=group_data_for_plot, x=group_data_for_plot.index,
+                     y=group_data_for_plot[group_data_for_plot.columns[i]], ax=axs,
+                     label=str(group_data_for_plot.columns[i]), marker=marker_list[i],
+                     markersize=4, color=color_list[i], linestyle=dashes_list[i])
+        axs.set_ylabel('负荷/kWh')
+        axs.set_xlabel('时间')
+        axs.xaxis.set_major_formatter(mdate.DateFormatter('%H'))
+        # axs.xaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        axs.legend()
+    plt.rcParams['xtick.direction'] = 'in'
+    plt.rcParams['ytick.direction'] = 'in'
+    f.tight_layout()
+
+    project_dir, output_describe, date, data_type, model_name, file_type = \
+        general_parameters.project_dir, r'\experiment_output\result_comparison', \
+        str(datetime.datetime.now().date()), res_or_sme, r'mimo_4th_chapter_6_models', '.png'
+    plt.savefig(
+        project_dir + output_describe + '_' + date + '_' + data_type + '_' + model_name + '_' + file_type,
+        format='png', pad_inches=0.0, transparent=True)
+    plt.show()
+
+
+
+
 
 def experiment_of_mimo_BIRCH_NN_GTOP():
     importlib.reload(pipeline_definition)

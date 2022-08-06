@@ -22,6 +22,8 @@ import matplotlib.dates as mdate
 
 import general_parameters
 
+np.random.seed(general_parameters.random_seed)
+
 plt.rcParams['font.sans-serif'] = ['STSONG']
 
 class window():
@@ -142,7 +144,7 @@ class proba_siso_Gaussian_CNN_GRU_pipeline():
                                       callbacks=[model_checkpoint_callback, tensorboard_callback],
                                       shuffle=True
                                       )
-        self.model.load_weights(checkpoint_filepath)
+        #self.model.load_weights(checkpoint_filepath)
         self.fit_end_time = process_time()
 
     def save_model_and_history(self, timestamp='temp'):
@@ -346,8 +348,11 @@ class proba_siso_Gaussian_CNN_GRU_pipeline():
     def get_training_plot(self):
         fig, ax = plt.subplots(1, 1, figsize=(6, 4))
 
-        ax.plot(self.history['val_metrics'][0:], marker='o', markersize=3, color='red')
-        ax.plot(self.history['train_metrics'][0:], marker='s', markersize=3, color='blue')
+        metrics = 'mean_absolute_percentage_error'
+        self.history_of_val_metrics = self.history.history['val_' + metrics][0:]
+
+        ax.plot(self.history.history[metrics][0:], marker='o', markersize=3, color='red')
+        ax.plot(self.history.history['val_'+metrics][0:], marker='s', markersize=3, color='blue')
         # plt.title('model loss')
         plt.ylabel('损失函数值')
         plt.xlabel('时期')
@@ -560,27 +565,27 @@ class proba_siso_Gaussian_ANN_pipeline(proba_siso_Gaussian_CNN_GRU_pipeline):
 
         self.model.compile(loss=nll,
                       optimizer=tf.optimizers.Adam(learning_rate=0.0001),
-                      metrics=[tf.metrics.MeanAbsoluteError()]
+                      metrics=[tf.metrics.MeanAbsolutePercentageError()]
                       )
 class point_siso_CNN_GRU_pipeline(proba_siso_Gaussian_CNN_GRU_pipeline):
 
     def build_and_compile_model(self):
-        from tensorflow.keras.layers import Input, Dense, Conv1D, GRU, Masking, Flatten
-        from tensorflow.keras.models import Model
+        initializer = tf.keras.initializers.Orthogonal()
+        regularizers = tf.keras.regularizers.l2(0)
+        self.model = tf.keras.Sequential([
+            tf.keras.layers.Conv1D(filters=128, kernel_size=(24,), strides=4, activation='relu',
+                                   kernel_initializer=initializer,
+                                   padding="same", kernel_regularizer=regularizers),
+            tf.keras.layers.GRU(32, return_sequences=False, kernel_initializer=initializer, activation='relu'),
+            # tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(units=128, activation='relu'),
+            tf.keras.layers.Normalization(),
+            tf.keras.layers.Dense(units=32, activation='relu'),
+            tf.keras.layers.Normalization(),
+            tf.keras.layers.Dense(1),
+        ])
 
-        inputs = Input(shape=(general_parameters.lookback_step, 8))
-        h = Conv1D(filters=128, kernel_size=(24,), strides=4, activation='relu',
-                   kernel_initializer=tf.keras.initializers.Orthogonal(), padding="same",
-                   kernel_regularizer=tf.keras.regularizers.l2(0))(inputs)
-        # h = Flatten()(inputs)
-        h = GRU(32, return_sequences=False, kernel_initializer=tf.keras.initializers.Orthogonal(), activation='relu')(
-            h)
-        # h = GRU(32, return_sequences=False, kernel_initializer=tf.keras.initializers.Orthogonal(), activation='relu')(h)
-        h = Dense(units=32, activation='relu')(h)
-        # h = Dense(units=32, activation='relu')(h)
-        overall = Dense(units=1, activation='relu')(h)
 
-        self.model = Model(inputs=[inputs], outputs=[overall])
         self.model.compile(loss=tf.losses.MeanSquaredError(), loss_weights=[1],
                            optimizer=tf.optimizers.Adam(learning_rate=0.0001),
                            metrics=[tf.metrics.MeanAbsolutePercentageError()])
@@ -669,6 +674,38 @@ class point_siso_ANN_pipeline(point_siso_CNN_GRU_pipeline):
         self.model.compile(loss=tf.losses.MeanSquaredError(),
                            optimizer=tf.optimizers.Adam(learning_rate=0.0001),
                            metrics=[tf.metrics.MeanAbsolutePercentageError()])
+class proba_siso_resemble_Gaussian_ANN_pipeline(proba_siso_Gaussian_CNN_GRU_pipeline):
+
+    def build_and_compile_model(self):
+        from tensorflow.keras.layers import Input, Dense, Conv1D, GRU, Masking, Flatten
+        from tensorflow.keras.models import Model
+
+        initializer = tf.keras.initializers.Orthogonal()
+        regularizers = tf.keras.regularizers.l2(0)
+
+        inputs = Input(shape=(general_parameters.lookback_step, 8))
+        inputs = Flatten()(inputs)
+
+        mu = Dense(units=128, activation='relu')(inputs)
+        mu = Dense(units=32, activation='relu')(mu)
+        mu = Dense(units=1, activation='relu')(mu)
+
+        sigma = Dense(units=128, activation='relu')(inputs)
+        sigma = Dense(units=32, activation='relu')(sigma)
+        sigma = Dense(units=1, activation='relu')(sigma)
+
+        outputs = tfpl.IndependentNormal(event_shape=1)*tf.convert_to_tensor([mu,sigma])
+
+        self.model = Model(inputs=[inputs], outputs=[outputs])
+
+        def nll(y_true, y_pred):
+            return -tf.reduce_mean(y_pred.log_prob(y_true))
+
+        self.model.compile(loss=nll,
+                           #tf.losses.MeanSquaredError(),
+                      optimizer=tf.optimizers.Adam(learning_rate=0.0001),
+                      metrics=[tf.metrics.MeanAbsolutePercentageError()]
+                      )
 
 
 class proba_mimo_BIRCH_NN_GTOP_pipeline(proba_siso_Gaussian_CNN_GRU_pipeline):
@@ -1151,5 +1188,3 @@ class point_siso_DTR_pipeline(point_siso_SVM_pipeline):
     def build_and_compile_model(self):
         from sklearn import tree
         self.model = tree.DecisionTreeRegressor()
-
-

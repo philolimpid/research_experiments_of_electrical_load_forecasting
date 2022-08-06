@@ -11,6 +11,8 @@ import h5py
 
 import general_parameters
 
+np.random.seed(general_parameters.random_seed)
+
 plt.rcParams['font.sans-serif'] = ['STSONG']
 
 # procedure-oriented functions definition
